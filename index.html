@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>House Points</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f5;--bg3:#ebebeb;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.2)}
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0}
+.app{max-width:600px;margin:0 auto;padding:1.25rem 1rem 4rem}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.app-title{font-size:13px;font-weight:500;letter-spacing:0.08em;color:var(--text2);text-transform:uppercase}
+.week-badge{font-size:12px;color:var(--text2);background:var(--bg2);border:0.5px solid var(--border);border-radius:20px;padding:3px 10px}
+.nav{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg2);border-radius:20px;padding:3px;width:fit-content}
+.nav-btn{font-size:12px;padding:5px 14px;border-radius:17px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+.nav-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.nav-btn:hover:not(.active){background:var(--bg3)}
+
+/* Houses */
+.houses{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.house{border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);overflow:hidden}
+.house-top{padding:1rem 1.25rem 0.75rem}
+.house-sigil{font-size:22px;margin-bottom:4px;cursor:pointer}
+.house-role{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px}
+.house-kid{font-size:18px;font-weight:500;color:var(--text);margin-bottom:0.75rem;cursor:pointer;display:flex;align-items:center;gap:5px}
+.edit-hint{font-size:12px;color:var(--text3);opacity:0.6}
+.pts-display{display:flex;align-items:baseline;gap:5px;margin-bottom:0.5rem}
+.pts-num{font-size:36px;font-weight:500;line-height:1}
+.pts-unit{font-size:13px;color:var(--text2)}
+.pts-bar-wrap{height:4px;background:var(--bg2);border-radius:2px;margin-bottom:0.75rem}
+.pts-bar{height:4px;border-radius:2px;transition:width 0.4s ease}
+.pay-strip{padding:0.6rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--border)}
+.pay-lbl{font-size:12px;color:var(--text2)}
+.pay-amt{font-size:15px;font-weight:500}
+
+/* Chores tab */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem}
+.section-title{font-size:15px;font-weight:500}
+.section-sub{font-size:12px;color:var(--text2)}
+.day-tabs{display:flex;gap:4px;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px}
+.day-tab{font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:inherit}
+.day-tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.day-tab:hover:not(.active){background:var(--bg2)}
+.chores-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem}
+.chore-item{display:flex;align-items:center;gap:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;transition:background 0.15s;user-select:none}
+.chore-item:hover{background:var(--bg2)}
+.chore-item.done{opacity:0.45}
+.chore-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s}
+.chore-info{flex:1;min-width:0}
+.chore-name{font-size:13px;line-height:1.3}
+.chore-meta{font-size:11px;color:var(--text2);margin-top:1px}
+.chore-pts{font-size:12px;font-weight:500;flex-shrink:0}
+
+/* Friday */
+.friday-zone{background:var(--bg2);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem;border:0.5px solid var(--border)}
+.friday-title{font-size:14px;font-weight:500;margin-bottom:12px}
+.payout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.payout-card{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;border:0.5px solid var(--border)}
+.payout-house{font-size:11px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px}
+.payout-pts{font-size:20px;font-weight:500}
+.payout-pay{font-size:13px;color:var(--text2);margin-top:2px}
+.winner-badge{font-size:12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text2);margin-bottom:12px;display:none}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all 0.15s}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.primary:hover{opacity:0.85}
+.btn.danger{border-color:#e24b4a;color:#e24b4a}
+.btn.danger:hover{background:#fcebeb}
+.history-list{display:flex;flex-direction:column;gap:6px}
+.history-item{font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.history-pts{font-weight:500;color:var(--text)}
+.empty-state{font-size:13px;color:var(--text2);text-align:center;padding:1.5rem;background:var(--bg2);border-radius:var(--radius-sm)}
+
+/* Week view */
+.week-view{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.day-block{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.day-block-header{font-size:11px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;padding:6px 10px;background:var(--bg2);color:var(--text2)}
+.day-block-header.today{color:var(--text)}
+.day-chore-list{padding:6px}
+.day-chore-row{display:flex;align-items:flex-start;gap:5px;padding:3px 4px}
+.day-chore-who{font-size:10px;font-weight:500;width:14px;flex-shrink:0;margin-top:2px}
+.day-chore-text{font-size:11px;flex:1;line-height:1.4}
+.day-chore-pts{font-size:10px;color:var(--text3);flex-shrink:0;margin-top:2px}
+
+/* Settings */
+.settings-section{margin-bottom:2rem}
+.settings-section-title{font-size:12px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text2);margin-bottom:0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.kid-config{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:10px}
+.kid-config-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.kid-sigil-btn{font-size:22px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default}
+.kid-fields{flex:1;display:flex;flex-direction:column;gap:6px}
+.field-row{display:flex;align-items:center;gap:8px}
+.field-lbl{font-size:12px;color:var(--text2);width:70px;flex-shrink:0}
+.field-inp{font-family:inherit;font-size:13px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);flex:1}
+.field-inp.sm{width:90px;flex:none}
+.allowance-sep{border-top:0.5px solid var(--border);margin:10px 0 8px}
+.house-picker{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.house-opt{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px;cursor:pointer;background:var(--bg);transition:border-color 0.15s}
+.house-opt-sigil{font-size:16px;margin-bottom:2px}
+.house-opt-name{font-size:12px;font-weight:500}
+.house-opt-trait{font-size:10px;color:var(--text2)}
+.chore-editor-list{display:flex;flex-direction:column;gap:6px}
+.chore-editor-row{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
+.chore-editor-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.chore-name-inp{font-family:inherit;font-size:13px;flex:1;padding:4px 6px;border:0.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)}
+.chore-fields{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.chore-fields select,.chore-fields input{font-family:inherit;font-size:12px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)}
+.pts-inp{width:54px}
+.pay-inp{width:62px}
+.day-cbs{display:flex;gap:4px;flex-wrap:wrap}
+.day-cb-lbl{font-size:11px;display:flex;align-items:center;gap:2px;cursor:pointer;color:var(--text2)}
+.del-btn{font-size:11px;padding:3px 8px;border-radius:5px;border:0.5px solid #e24b4a;color:#e24b4a;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0}
+.del-btn:hover{background:#fcebeb}
+.add-chore-btn{font-size:13px;padding:8px 14px;border-radius:var(--radius-sm);border:0.5px dashed var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;width:100%;margin-top:6px;transition:all 0.15s}
+.add-chore-btn:hover{background:var(--bg2)}
+.save-settings{margin-top:1rem}
+
+/* Toast */
+.toast{position:fixed;top:1rem;right:1rem;background:var(--text);color:var(--bg);font-size:12px;padding:6px 14px;border-radius:20px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <span class="app-title">House Points</span>
+    <span class="week-badge" id="week-badge">—</span>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchTab('tracker')">Tracker</button>
+    <button class="nav-btn" onclick="switchTab('week')">This week</button>
+    <button class="nav-btn" onclick="switchTab('settings')">Settings</button>
+  </div>
+
+  <!-- TRACKER -->
+  <div id="tab-tracker">
+    <div class="houses">
+      <div class="house" id="house-g-card">
+        <div class="house-top">
+          <div class="house-sigil" id="g-sigil" onclick="switchTab('settings')">⚔️</div>
+          <div class="house-role" id="g-role">Gryffindor · Age 11</div>
+          <div class="house-kid" onclick="switchTab('settings')"><span id="g-name">Kid 1</span><span class="edit-hint">✎</span></div>
+          <div class="pts-display"><span class="pts-num" id="g-pts">0</span><span class="pts-unit">pts</span></div>
+          <div class="pts-bar-wrap"><div class="pts-bar" id="g-bar" style="width:0%"></div></div>
+        </div>
+        <div class="pay-strip"><span class="pay-lbl">Earned this week</span><span class="pay-amt" id="g-pay">$0.00</span></div>
+      </div>
+      <div class="house" id="house-h-card">
+        <div class="house-top">
+          <div class="house-sigil" id="h-sigil" onclick="switchTab('settings')">🌿</div>
+          <div class="house-role" id="h-role">Hufflepuff · Age 6</div>
+          <div class="house-kid" onclick="switchTab('settings')"><span id="h-name">Kid 2</span><span class="edit-hint">✎</span></div>
+          <div class="pts-display"><span class="pts-num" id="h-pts">0</span><span class="pts-unit">pts</span></div>
+          <div class="pts-bar-wrap"><div class="pts-bar" id="h-bar" style="width:0%"></div></div>
+        </div>
+        <div class="pay-strip"><span class="pay-lbl">Pocket money</span><span class="pay-amt" id="h-pay">$1.50</span></div>
+      </div>
+    </div>
+    <div class="section-head">
+      <span class="section-title">Today's chores</span>
+      <span class="section-sub" id="today-lbl"></span>
+    </div>
+    <div class="day-tabs" id="day-tabs"></div>
+    <div class="chores-list" id="chores-list"></div>
+    <div class="friday-zone">
+      <div class="friday-title">⚡ Friday ceremony</div>
+      <div class="payout-grid">
+        <div class="payout-card" id="f-g-card">
+          <div class="payout-house" id="f-g-house">—</div>
+          <div class="payout-pts" id="f-g-pts">0 pts</div>
+          <div class="payout-pay" id="f-g-pay">$0.00 earned</div>
+        </div>
+        <div class="payout-card" id="f-h-card">
+          <div class="payout-house" id="f-h-house">—</div>
+          <div class="payout-pts" id="f-h-pts">0 pts</div>
+          <div class="payout-pay" id="f-h-allowance-lbl">$1.50 pocket money</div>
+        </div>
+      </div>
+      <div class="winner-badge" id="winner-badge"></div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="doPayout()">Pay out & reset week</button>
+        <button class="btn danger" onclick="confirmReset()">Reset all</button>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:1.5rem">
+      <span class="section-title">History</span>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+  <!-- WEEK VIEW -->
+  <div id="tab-week" style="display:none">
+    <div class="section-head" style="margin-bottom:1rem">
+      <span class="section-title">Chores at a glance</span>
+      <span class="section-sub">Full week · both kids</span>
+    </div>
+    <div class="week-view" id="week-view"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" style="display:none">
+    <div class="settings-section">
+      <div class="settings-section-title">Kid 1 — older</div>
+      <div class="kid-config">
+        <div class="kid-config-header">
+          <div class="kid-sigil-btn" id="g-sigil-btn">⚔️</div>
+          <div class="kid-fields">
+            <div class="field-row"><span class="field-lbl">Name</span><input class="field-inp" id="s-g-name" type="text" maxlength="20" placeholder="Kid 1"></div>
+            <div class="field-row"><span class="field-lbl">Age label</span><input class="field-inp sm" id="s-g-age" type="text" maxlength="10" placeholder="Age 11"></div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pay per completed paid chore — set in chore editor below.</div>
+        <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px">House</div>
+        <div class="house-picker" id="g-house-picker"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Kid 2 — younger</div>
+      <div class="kid-config">
+        <div class="kid-config-header">
+          <div class="kid-sigil-btn" id="h-sigil-btn">🌿</div>
+          <div class="kid-fields">
+            <div class="field-row"><span class="field-lbl">Name</span><input class="field-inp" id="s-h-name" type="text" maxlength="20" placeholder="Kid 2"></div>
+            <div class="field-row"><span class="field-lbl">Age label</span><input class="field-inp sm" id="s-h-age" type="text" maxlength="10" placeholder="Age 6"></div>
+          </div>
+        </div>
+        <div class="allowance-sep"></div>
+        <div class="field-row"><span class="field-lbl">Flat weekly $</span><input class="field-inp sm" id="s-h-allowance" type="number" min="0" step="0.25" placeholder="1.50"></div>
+        <div style="font-size:12px;font-weight:500;color:var(--text2);margin-top:10px;margin-bottom:6px">House</div>
+        <div class="house-picker" id="h-house-picker"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Chore list</div>
+      <div class="chore-editor-list" id="chore-editor-list"></div>
+      <button class="add-chore-btn" onclick="addChore()">+ Add chore</button>
+    </div>
+    <button class="btn primary save-settings" onclick="saveSettings()">Save all changes</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const TODAY_IDX=(new Date().getDay()+6)%7;
+const HOUSES={
+  gryffindor:{name:'Gryffindor',sigil:'⚔️',trait:'Brave & bold',color:'#B22222',colorDark:'#ff7070'},
+  hufflepuff:{name:'Hufflepuff',sigil:'🌿',trait:'Kind & loyal',color:'#B8860B',colorDark:'#ffc733'},
+  ravenclaw:{name:'Ravenclaw',sigil:'📖',trait:'Wise & sharp',color:'#1a4a8a',colorDark:'#6699ff'},
+  slytherin:{name:'Slytherin',sigil:'🐍',trait:'Clever & driven',color:'#1a6b3a',colorDark:'#44cc77'},
+};
+const DEFAULT_CHORES=[
+  {id:'bed_h',name:'Make bed',meta:'Every morning',house:'h',pts:5,days:[0,1,2,3,4,5,6],pay:0},
+  {id:'pack_h',name:'Backpack unpack + homework spot',meta:'After school',house:'h',pts:5,days:[0,1,2,3,4],pay:0},
+  {id:'table_b',name:'Help clear dinner table',meta:'After dinner',house:'b',pts:5,days:[0,2,4],pay:0},
+  {id:'room_b',name:'Tidy own room',meta:'Before bed',house:'b',pts:5,days:[0,1,2,3,4,5,6],pay:0},
+  {id:'dishes_g',name:'Unload dishwasher',meta:'After school',house:'g',pts:10,days:[0],pay:0.50},
+  {id:'trash_g',name:'Collect trash bins',meta:'After school',house:'g',pts:10,days:[2],pay:0.50},
+  {id:'vacuum_g',name:'Vacuum main floor',meta:'After school',house:'g',pts:15,days:[4],pay:1.00},
+  {id:'counters_g',name:'Wipe kitchen counters',meta:'After dinner',house:'g',pts:5,days:[1,3],pay:0.25},
+  {id:'bathroom_g',name:'Bathroom sink + mirror',meta:'Saturday',house:'g',pts:15,days:[5],pay:1.00},
+  {id:'laundry_h',name:'Help sort laundry',meta:'Saturday',house:'h',pts:10,days:[5],pay:0},
+  {id:'bonus_g',name:'Helped sibling with a task',meta:'Bonus — any day',house:'g',pts:10,days:[0,1,2,3,4,5,6],pay:0},
+];
+function defaultState(){return{gPts:0,hPts:0,gPay:0,checked:{},history:[],weekStart:getWeekStart(),gName:'Kid 1',hName:'Kid 2',gAge:'Age 11',hAge:'Age 6',gHouse:'gryffindor',hHouse:'hufflepuff',hAllowance:1.50,chores:JSON.parse(JSON.stringify(DEFAULT_CHORES))};}
+let S=defaultState();
+let activeDay=TODAY_IDX,currentTab='tracker',sGH='gryffindor',sHH='hufflepuff';
+function getWeekStart(){const d=new Date(),day=d.getDay(),diff=(day===0?-6:1-day),m=new Date(d);m.setDate(d.getDate()+diff);return m.toDateString();}
+function weekLabel(){const d=new Date(S.weekStart);return'Week of '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function isDark(){return window.matchMedia('(prefers-color-scheme:dark)').matches;}
+function hColor(k){return isDark()?HOUSES[k].colorDark:HOUSES[k].color;}
+function load(){try{const raw=localStorage.getItem('housepoints');if(raw){const saved=JSON.parse(raw);if(saved.weekStart!==getWeekStart()){const f=defaultState();['history','gName','hName','gAge','hAge','gHouse','hHouse','hAllowance','chores'].forEach(k=>{if(saved[k]!=null)f[k]=saved[k];});S=f;}else{S=Object.assign(defaultState(),saved);if(!S.chores||!S.chores.length)S.chores=JSON.parse(JSON.stringify(DEFAULT_CHORES));}}}catch(e){}render();}
+function save(){try{localStorage.setItem('housepoints',JSON.stringify(S));}catch(e){}}
+function recalc(){let gp=0,hp=0,gpy=0;Object.keys(S.checked).forEach(k=>{if(!S.checked[k])return;const parts=k.split('-');const id=parts.slice(1).join('-');const ch=S.chores.find(c=>c.id===id);if(!ch)return;if(ch.house==='g'){gp+=ch.pts;gpy+=ch.pay;}else if(ch.house==='h')hp+=ch.pts;else if(ch.house==='b'){gp+=ch.pts;hp+=ch.pts;}});S.gPts=gp;S.hPts=hp;S.gPay=gpy;}
+function switchTab(t){currentTab=t;['tracker','week','settings'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});document.querySelectorAll('.nav-btn').forEach((b,i)=>{b.classList.toggle('active',['tracker','week','settings'][i]===t);});if(t==='settings')renderSettings();if(t==='week')renderWeekView();}
+function render(){
+  recalc();
+  const gh=HOUSES[S.gHouse],hh=HOUSES[S.hHouse],gc=hColor(S.gHouse),hc=hColor(S.hHouse);
+  document.getElementById('week-badge').textContent=weekLabel();
+  document.getElementById('house-g-card').style.borderTop='3px solid '+gc;
+  document.getElementById('g-sigil').textContent=gh.sigil;
+  document.getElementById('g-role').textContent=gh.name+' · '+S.gAge;
+  document.getElementById('g-role').style.color=gc;
+  document.getElementById('g-name').textContent=S.gName;
+  document.getElementById('g-pts').textContent=S.gPts;
+  document.getElementById('g-pts').style.color=gc;
+  document.getElementById('g-pay').textContent='$'+S.gPay.toFixed(2);
+  document.getElementById('g-pay').style.color=gc;
+  document.getElementById('house-h-card').style.borderTop='3px solid '+hc;
+  document.getElementById('h-sigil').textContent=hh.sigil;
+  document.getElementById('h-role').textContent=hh.name+' · '+S.hAge;
+  document.getElementById('h-role').style.color=hc;
+  document.getElementById('h-name').textContent=S.hName;
+  document.getElementById('h-pts').textContent=S.hPts;
+  document.getElementById('h-pts').style.color=hc;
+  document.getElementById('h-pay').textContent='$'+parseFloat(S.hAllowance).toFixed(2);
+  document.getElementById('h-pay').style.color=hc;
+  const mp=Math.max(S.gPts,S.hPts,50);
+  const gb=document.getElementById('g-bar');gb.style.width=Math.min(100,S.gPts/mp*100)+'%';gb.style.background=gc;
+  const hb=document.getElementById('h-bar');hb.style.width=Math.min(100,S.hPts/mp*100)+'%';hb.style.background=hc;
+  const tabs=document.getElementById('day-tabs');tabs.innerHTML='';
+  DAYS.forEach((d,i)=>{const btn=document.createElement('button');btn.className='day-tab'+(i===activeDay?' active':'');btn.textContent=i===TODAY_IDX?d+' · now':d;btn.onclick=()=>{activeDay=i;render();};tabs.appendChild(btn);});
+  document.getElementById('today-lbl').textContent=DAYS[activeDay];
+  const list=document.getElementById('chores-list');list.innerHTML='';
+  const dc=S.chores.filter(c=>c.days&&c.days.includes(activeDay));
+  if(!dc.length){list.innerHTML='<div class="empty-state">No chores assigned for this day.</div>';}
+  else{dc.forEach(ch=>{const key=activeDay+'-'+ch.id;const done=!!S.checked[key];const color=ch.house==='g'?gc:ch.house==='h'?hc:'#5a5aad';const who=ch.house==='g'?S.gName:ch.house==='h'?S.hName:'Both';const item=document.createElement('div');item.className='chore-item'+(done?' done':'');item.onclick=()=>toggleChore(key);item.innerHTML=`<div class="chore-check" style="${done?'background:'+color+';border-color:'+color+';color:#fff':'border-color:'+color}">${done?'✓':''}</div><div class="chore-info"><div class="chore-name">${ch.name}</div><div class="chore-meta">${ch.meta} · ${who}${ch.pay>0?' · $'+parseFloat(ch.pay).toFixed(2)+' pay':''}</div></div><div class="chore-pts" style="color:${color}">+${ch.pts}</div>`;list.appendChild(item);});}
+  document.getElementById('f-g-house').textContent=S.gName;document.getElementById('f-g-house').style.color=gc;
+  document.getElementById('f-g-card').style.borderTop='2px solid '+gc;
+  document.getElementById('f-g-pts').textContent=S.gPts+' pts';document.getElementById('f-g-pts').style.color=gc;
+  document.getElementById('f-g-pay').textContent='$'+S.gPay.toFixed(2)+' earned';
+  document.getElementById('f-h-house').textContent=S.hName;document.getElementById('f-h-house').style.color=hc;
+  document.getElementById('f-h-card').style.borderTop='2px solid '+hc;
+  document.getElementById('f-h-pts').textContent=S.hPts+' pts';document.getElementById('f-h-pts').style.color=hc;
+  document.getElementById('f-h-allowance-lbl').textContent='$'+parseFloat(S.hAllowance).toFixed(2)+' pocket money';
+  const wb=document.getElementById('winner-badge');
+  if(S.gPts>S.hPts){wb.style.display='block';wb.textContent='🏆 '+S.gName+' wins — picks the weekend movie or dinner.';}
+  else if(S.hPts>S.gPts){wb.style.display='block';wb.textContent='🏆 '+S.hName+' wins — picks the weekend movie or dinner.';}
+  else if(S.gPts>0){wb.style.display='block';wb.textContent='🤝 Tied — decide together.';}
+  else wb.style.display='none';
+  const hist=document.getElementById('history-list');
+  if(!S.history.length){hist.innerHTML='<div class="empty-state">No completed weeks yet. First payout Friday.</div>';}
+  else{hist.innerHTML='';[...S.history].reverse().slice(0,8).forEach(w=>{const el=document.createElement('div');el.className='history-item';el.innerHTML=`<span>${w.weekOf} — ${w.winner} won</span><span class="history-pts">${w.gPts} vs ${w.hPts} pts · $${parseFloat(w.gPay).toFixed(2)} paid</span>`;hist.appendChild(el);});}
+}
+function renderWeekView(){
+  const gc=hColor(S.gHouse),hc=hColor(S.hHouse);
+  const wrap=document.getElementById('week-view');wrap.innerHTML='';
+  DAYS.forEach((day,di)=>{
+    const dc=S.chores.filter(c=>c.days&&c.days.includes(di));
+    const block=document.createElement('div');block.className='day-block';
+    const isToday=di===TODAY_IDX;
+    block.innerHTML=`<div class="day-block-header${isToday?' today':''}">${day}${isToday?' · now':''}</div><div class="day-chore-list" id="dcl-${di}"></div>`;
+    wrap.appendChild(block);
+    const dcl=block.querySelector('.day-chore-list');
+    if(!dc.length){dcl.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px">Rest day</div>';}
+    else{dc.forEach(ch=>{const color=ch.house==='g'?gc:ch.house==='h'?hc:'#5a5aad';const who=ch.house==='g'?'G':ch.house==='h'?'H':'B';const row=document.createElement('div');row.className='day-chore-row';row.innerHTML=`<span class="day-chore-who" style="color:${color}">${who}</span><span class="day-chore-text">${ch.name}</span><span class="day-chore-pts">+${ch.pts}</span>`;dcl.appendChild(row);});}
+  });
+}
+function renderSettings(){
+  sGH=S.gHouse;sHH=S.hHouse;
+  document.getElementById('s-g-name').value=S.gName;
+  document.getElementById('s-g-age').value=S.gAge;
+  document.getElementById('s-h-name').value=S.hName;
+  document.getElementById('s-h-age').value=S.hAge;
+  document.getElementById('s-h-allowance').value=parseFloat(S.hAllowance).toFixed(2);
+  document.getElementById('g-sigil-btn').textContent=HOUSES[S.gHouse].sigil;
+  document.getElementById('h-sigil-btn').textContent=HOUSES[S.hHouse].sigil;
+  renderHousePicker('g-house-picker','g');
+  renderHousePicker('h-house-picker','h');
+  renderChoreEditor();
+}
+function renderHousePicker(cid,kid){
+  const wrap=document.getElementById(cid);wrap.innerHTML='';
+  const cur=kid==='g'?sGH:sHH;
+  Object.entries(HOUSES).forEach(([key,h])=>{
+    const sel=cur===key;const col=hColor(key);
+    const div=document.createElement('div');div.className='house-opt'+(sel?' selected':'');
+    div.style.borderColor=sel?col:'var(--border)';
+    div.innerHTML=`<div class="house-opt-sigil">${h.sigil}</div><div class="house-opt-name" style="color:${sel?col:'var(--text)'}">${h.name}</div><div class="house-opt-trait">${h.trait}</div>`;
+    div.onclick=()=>{if(kid==='g'){sGH=key;document.getElementById('g-sigil-btn').textContent=h.sigil;}else{sHH=key;document.getElementById('h-sigil-btn').textContent=h.sigil;}renderHousePicker(cid,kid);};
+    wrap.appendChild(div);
+  });
+}
+function renderChoreEditor(){
+  const list=document.getElementById('chore-editor-list');list.innerHTML='';
+  S.chores.forEach((ch,idx)=>{
+    const row=document.createElement('div');row.className='chore-editor-row';
+    const dayChecks=DAYS.map((d,di)=>`<label class="day-cb-lbl"><input type="checkbox" data-idx="${idx}" data-day="${di}" ${ch.days&&ch.days.includes(di)?'checked':''}> ${d}</label>`).join('');
+    row.innerHTML=`<div class="chore-editor-top"><input class="chore-name-inp" data-idx="${idx}" value="${ch.name}" placeholder="Chore name"><button class="del-btn" onclick="deleteChore(${idx})">Remove</button></div>
+    <div class="chore-fields">
+      <span style="font-size:12px;color:var(--text2)">Who:</span>
+      <select data-idx="${idx}" data-field="house" onchange="updateCF(this)"><option value="g" ${ch.house==='g'?'selected':''}>Kid 1</option><option value="h" ${ch.house==='h'?'selected':''}>Kid 2</option><option value="b" ${ch.house==='b'?'selected':''}>Both</option></select>
+      <span style="font-size:12px;color:var(--text2)">Pts:</span>
+      <input class="pts-inp" type="number" min="0" data-idx="${idx}" data-field="pts" value="${ch.pts}" onchange="updateCF(this)">
+      <span style="font-size:12px;color:var(--text2)">Pay $:</span>
+      <input class="pay-inp" type="number" min="0" step="0.25" data-idx="${idx}" data-field="pay" value="${parseFloat(ch.pay).toFixed(2)}" onchange="updateCF(this)">
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Days:</div>
+    <div class="day-cbs">${dayChecks}</div>`;
+    list.appendChild(row);
+    row.querySelector('.chore-name-inp').addEventListener('change',function(){S.chores[parseInt(this.dataset.idx)].name=this.value;});
+    row.querySelectorAll('.day-cbs input').forEach(cb=>{cb.addEventListener('change',function(){const i=parseInt(this.dataset.idx),day=parseInt(this.dataset.day);if(!S.chores[i].days)S.chores[i].days=[];if(this.checked){if(!S.chores[i].days.includes(day))S.chores[i].days.push(day);}else S.chores[i].days=S.chores[i].days.filter(d=>d!==day);S.chores[i].days.sort((a,b)=>a-b);});});
+  });
+}
+function updateCF(el){const idx=parseInt(el.dataset.idx),field=el.dataset.field;const v=field==='pts'?parseInt(el.value):field==='pay'?parseFloat(el.value):el.value;S.chores[idx][field]=isNaN(v)?el.value:v;}
+function addChore(){S.chores.push({id:'custom_'+Date.now(),name:'New chore',meta:'',house:'g',pts:5,days:[0],pay:0});renderChoreEditor();}
+function deleteChore(idx){S.chores.splice(idx,1);renderChoreEditor();}
+function saveSettings(){
+  S.gName=document.getElementById('s-g-name').value.trim()||'Kid 1';
+  S.gAge=document.getElementById('s-g-age').value.trim()||'Age 11';
+  S.hName=document.getElementById('s-h-name').value.trim()||'Kid 2';
+  S.hAge=document.getElementById('s-h-age').value.trim()||'Age 6';
+  S.hAllowance=parseFloat(document.getElementById('s-h-allowance').value)||1.50;
+  S.gHouse=sGH;S.hHouse=sHH;
+  save();render();showToast('Saved ✓');switchTab('tracker');
+}
+function toggleChore(key){S.checked[key]=!S.checked[key];save();render();showToast(S.checked[key]?'Points added ✓':'Unchecked');}
+function doPayout(){const winner=S.gPts>S.hPts?S.gName:S.hPts>S.gPts?S.hName:'Tie';S.history.push({weekOf:weekLabel(),gPts:S.gPts,hPts:S.hPts,gPay:S.gPay,winner});S.gPts=0;S.hPts=0;S.gPay=0;S.checked={};S.weekStart=getWeekStart();save();render();showToast('Week paid out! Starting fresh 🏆');}
+function confirmReset(){if(confirm('Reset all points, history, and data? This cannot be undone.')){const keep={gName:S.gName,hName:S.hName,gAge:S.gAge,hAge:S.hAge,gHouse:S.gHouse,hHouse:S.hHouse,hAllowance:S.hAllowance,chores:S.chores};S=Object.assign(defaultState(),keep);save();render();showToast('All data cleared.');}}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
+load();
+</script>
+</body>
+</html>
